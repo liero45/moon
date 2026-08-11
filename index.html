@@ -233,7 +233,7 @@
         positions.push(text);
         if (isAdmin) {
             const status = diff === 0 ? '<span class="ok">✓ на месте</span>' : `<span class="diff">✗ отклонение: ${diff}</span>`;
-            details += `<li><strong>${userPos + 1}.</strong> ${text} — эталон: <strong>${эталонPos + 1}</strong> ${status} <strong> ${info}</li></strong>`;
+            details += `<li><strong>${userPos + 1}.</strong> ${text} — эталон: <strong>${эталонPos + 1}</strong> ${status} <strong> <br>${info}</li></strong>`;
         }
         });
 
