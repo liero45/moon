@@ -90,6 +90,7 @@
     
     const urlParams = new URLSearchParams(window.location.search);
     let playerId = urlParams.get('player');
+    let playerName = '';
 
     if (!playerId) {
       playerId = 'player_' + Math.random().toString(36).substr(2, 9);
@@ -217,6 +218,7 @@
       closeModal();
       check();
     }
+    
     function check() {
       let totalDiff = 0;
       let details = '<h3>Результат:</h3><ul>';
