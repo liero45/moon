@@ -258,7 +258,7 @@
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          playerId: playerId,
+          playerId: playerId + '_' + playerName,
           result: totalDiff,
           positions: positions
         })
