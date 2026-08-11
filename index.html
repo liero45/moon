@@ -168,8 +168,8 @@
         const info = explain[эталонPos];
         totalDiff += diff;
         positions.push(text);
-        // const status = diff === 0 ? '<span class="ok">✓ на месте</span>' : `<span class="diff">✗ отклонение: ${diff}</span>`;
-        details += `<li><strong>${userPos + 1}.</strong> ${text} — эталон: ${эталонPos + 1} ${status} Инфо: ${info}</li>`;
+        const status = diff === 0 ? '<span class="ok">✓ на месте</span>' : `<span class="diff">✗ отклонение: ${diff}</span>`;
+        details += `<li><strong>${userPos + 1}.</strong> ${text} — эталон: ${эталонPos + 1} ${status} <strong>Инфо: ${info}</li></strong>`;
       });
 
       details += `</ul><p><strong>Суммарное отклонение:</strong> ${totalDiff}</p>`;
