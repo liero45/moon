@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Сортировка строк с проверкой</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .item {
+      padding: 10px;
+      margin: 5px 0;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      cursor: grab;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+    .item.dragging { opacity: 0.4; background: #ddd; }
+    .item.over { border-top: 3px solid #007bff; }
+    .number {
+      font-weight: bold;
+      color: #007bff;
+      min-width: 30px;
+    }
+    .text { flex: 1; }
+    .result { margin-top: 20px; }
+    .diff { color: #d00; }
+    .ok { color: #0a0; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
+    .player-info { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    .status { margin-top: 10px; padding: 10px; border-radius: 5px; }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>Расставьте строки в правильном порядке</h1>
+  
+  <div class="player-info" id="playerInfo"></div>
+  
+  <div id="list"></div>
+  <button onclick="check()">Проверить</button>
+  <button onclick="copyLink()">Копировать ссылку</button>
+  <div class="result" id="result"></div>
+  <div class="status" id="status"></div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwloOcK0Lt8RyZ9RC91Gl9pfVZbqTEaMdyJWqi2fsr0lDV8W5DjrD4ETw-z5PozwkkbZw/exec';
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    let playerId = urlParams.get('player');
+
+    if (!playerId) {
+      playerId = 'player_' + Math.random().toString(36).substr(2, 9);
+      const newUrl = window.location.pathname + '?player=' + playerId;
+      window.history.replaceState({}, '', newUrl);
+    }
+
+    document.getElementById('playerInfo').innerHTML = `
+      <strong>Ваш ID:</strong> ${playerId}<br>
+      <small>Отправьте эту ссылку другим, чтобы они видели ваш результат</small>
+    `;
+
+    const эталон = [
+      "Строка 1", "Строка 2", "Строка 3", "Строка 4", "Строка 5",
+      "Строка 6", "Строка 7", "Строка 8", "Строка 9", "Строка 10",
+      "Строка 11", "Строка 12", "Строка 13", "Строка 14"
+    ];
+
+    let текущийПорядок = [...эталон].sort(() => Math.random() - 0.5);
+    const listEl = document.getElementById('list');
+    const resultEl = document.getElementById('result');
+    const statusEl = document.getElementById('status');
+    let draggedItem = null;
+
+    function render() {
+      listEl.innerHTML = '';
+      текущийПорядок.forEach((text, idx) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.draggable = true;
+        div.dataset.index = idx;
+
+        const number = document.createElement('span');
+        number.className = 'number';
+        number.textContent = (idx + 1) + '.';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'text';
+        textSpan.textContent = text;
+
+        div.appendChild(number);
+        div.appendChild(textSpan);
+
+        div.addEventListener('dragstart', handleDragStart);
+        div.addEventListener('dragend', handleDragEnd);
+        div.addEventListener('dragover', handleDragOver);
+        div.addEventListener('drop', handleDrop);
+        div.addEventListener('dragenter', handleDragEnter);
+        div.addEventListener('dragleave', handleDragLeave);
+
+        listEl.appendChild(div);
+      });
+    }
+
+    function handleDragStart(e) {
+      draggedItem = this;
+      setTimeout(() => this.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', this.dataset.index);
+    }
+
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.item').forEach(item => {
+        item.classList.remove('over');
+      });
+      draggedItem = null;
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragEnter(e) {
+      e.preventDefault();
+      if (this !== draggedItem) {
+        this.classList.add('over');
+      }
+    }
+
+    function handleDragLeave() {
+      this.classList.remove('over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      this.classList.remove('over');
+      
+      if (this === draggedItem) return;
+      
+      const fromIndex = +draggedItem.dataset.index;
+      const toIndex = +this.dataset.index;
+      
+      if (fromIndex !== toIndex) {
+        const [moved] = текущийПорядок.splice(fromIndex, 1);
+        текущийПорядок.splice(toIndex, 0, moved);
+        render();
+      }
+    }
+
+    function check() {
+      let totalDiff = 0;
+      let details = '<h3>Результат:</h3><ul>';
+      let positions = [];
+
+      текущийПорядок.forEach((text, userPos) => {
+        const эталонPos = эталон.indexOf(text);
+        const diff = Math.abs(userPos - эталонPos);
+        totalDiff += diff;
+        positions.push(userPos + 1);
+        const status = diff === 0 ? '<span class="ok">✓ на месте</span>' : `<span class="diff">✗ отклонение: ${diff}</span>`;
+        details += `<li><strong>${userPos + 1}.</strong> ${text} — эталон: ${эталонPos + 1} ${status}</li>`;
+      });
+
+      details += `</ul><p><strong>Суммарное отклонение:</strong> ${totalDiff}</p>`;
+      
+      if (totalDiff === 0) {
+        details += '<p style="color: green; font-weight: bold;">✓ Все строки на правильных местах!</p>';
+      }
+      
+      resultEl.innerHTML = details;
+      
+      // Отправляем результат в Google Sheets
+      statusEl.innerHTML = '<div class="status">Сохранение результата...</div>';
+      
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          playerId: playerId,
+          result: totalDiff,
+          positions: positions
+        })
+      })
+      .then(response => {
+        statusEl.innerHTML = '<div class="status success">✓ Результат сохранён в таблицу!</div>';
+      })
+      .catch(error => {
+        console.error('Ошибка:', error);
+        statusEl.innerHTML = '<div class="status error">✗ Ошибка сохранения. Попробуйте ещё раз.</div>';
+      });
+    }
+
+    function copyLink() {
+      const link = window.location.href;
+      navigator.clipboard.writeText(link).then(() => {
+        alert('Ссылка скопирована: ' + link);
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
